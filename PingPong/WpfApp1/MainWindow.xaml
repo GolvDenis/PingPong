@@ -5,39 +5,36 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
-        Focusable="True"    Loaded="Window_Loaded"
-        KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
+        Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <!-- 3D‑сцена -->
-        <Viewport3D Name="MainViewport">
-            <!-- Камера -->
+        <!-- 3D-сцена -->
+        <Viewport3D x:Name="MainViewport">
             <Viewport3D.Camera>
                 <PerspectiveCamera x:Name="MainCamera"
                                    Position="0,2,-5"
                                    LookDirection="0,-0.3,1"
                                    UpDirection="0,1,0"
-                                   FieldOfView="45"/>
+                                   FieldOfView="60"/>
             </Viewport3D.Camera>
-
-            <!-- Джерела світла -->
+            <!-- Джерело світла -->
             <ModelVisual3D>
                 <ModelVisual3D.Content>
-                    <DirectionalLight Color="White" Direction="-0.3,-1,0.2"/>
+                    <AmbientLight Color="White"/>
                 </ModelVisual3D.Content>
             </ModelVisual3D>
         </Viewport3D>
 
-        <!-- Простий UI для рахунку -->
+        <!-- UI для рахунку -->
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
                     Margin="10">
             <TextBlock Text="Player: " FontSize="16"/>
-            <TextBlock Name="PlayerScoreText" Text="0" FontSize="16" Margin="0,0,20,0"/>
-            <TextBlock Text="Opponent: " FontSize="16"/>
-            <TextBlock Name="OpponentScoreText" Text="0" FontSize="16"/>
+            <TextBlock Name="PlayerScoreText" Text="0" FontSize="16" Margin="5,0"/>
+            <TextBlock Text="Opponent: " FontSize="16" Margin="20,0,0,0"/>
+            <TextBlock Name="OpponentScoreText" Text="0" FontSize="16" Margin="5,0"/>
         </StackPanel>
+
     </Grid>
 
 </Window>

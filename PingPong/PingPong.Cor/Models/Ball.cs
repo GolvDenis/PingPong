@@ -1,4 +1,5 @@
 ﻿using PingPong.Cor.Core;
+using PingPong.Core.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,25 +27,12 @@ namespace PingPong.Core.Models
     /// </summary>
     public class Ball : GameObject3D
     {
-        /// <summary>
-        /// Радіус м’яча (метри).
-        /// </summary>
         public double Radius { get; } = 0.02;
-
-        /// <summary>
-        /// Для колізій: використовуємо сферу.
-        /// </summary>
         public double CollisionRadius => Radius;
+        public SpinType CurrentSpin { get; set; }
 
-        /// <summary>
-        /// Поточний тип обертання (спін).
-        /// </summary>
-        public SpinType CurrentSpin { get; set; } = SpinType.None;
-
-        /// <summary>
-        /// Ось і кутова швидкість обертання (рад/с).
-        /// </summary>
-        public Vector3D AngularVelocity { get; set; } = new Vector3D(0, 0, 0);
+        private readonly AxisAngleRotation3D _spinRotation;
+        public Vector3D AngularVelocity { get; set; } = new Vector3D();
 
         public Ball()
         {
@@ -90,74 +78,41 @@ namespace PingPong.Core.Models
             }
 
             // Білий матеріал (можна замінити текстурою через ResourceManager)
-            var material = new DiffuseMaterial(new SolidColorBrush(Colors.White));
+            var material = new DiffuseMaterial(new SolidColorBrush(Colors.Yellow));
 
             InitializeModel(mesh, material);
+
+            _spinRotation = new AxisAngleRotation3D(new Vector3D(0, 0, 1), 0);
+            Transform = new RotateTransform3D(_spinRotation, new Point3D(0, 0, 0));
 
             // Початкова позиція: центр столу, трохи вище поверхні
             this.Position = new Point3D(0, Radius + 0.76, 0);
         }
 
-        /// <summary>
-        /// Оновлення позиції, швидкості та обертання.
-        /// </summary>
+
         public override void Update(double deltaTime)
         {
-            // Викликаємо базове оновлення (позиція за лінійною швидкістю)
             base.Update(deltaTime);
-
-            // Якщо задано обертання, застосовуємо його до Transform3D
-            if (AngularVelocity.Length > 0)
+            if (CurrentSpin != SpinType.None)
             {
-                // Обчислюємо кут (в градусах) для цього кадру
-                double angleDeg = AngularVelocity.Length * deltaTime * (180.0 / Math.PI);
-                // Ось обертання — напрямок AngularVelocity
-                var axis = AngularVelocity;
-                axis.Normalize();
-
-                // Створюємо обертання навколо локальної осі
-                var rotate = new AxisAngleRotation3D(axis, angleDeg);
-                var rotTransform = new RotateTransform3D(rotate, new Point3D(0, 0, 0));
-
-                // Додаємо нове обертання до існуючих трансформацій
-                var group = Transform as Transform3DGroup ?? new Transform3DGroup();
-                group.Children.Add(rotTransform);
-                Transform = group;
+                var axis = GetSpinAxis(CurrentSpin);
+                _spinRotation.Axis = axis;
+                _spinRotation.Angle += AngularVelocity.Length * deltaTime * (180 / Math.PI);
             }
         }
 
-        /// <summary>
-        /// Обробка зіткнення: змінюємо швидкість і додаємо спін залежно від CurrentSpin.
-        /// </summary>
         public override void OnCollision(GameObject3D other)
         {
-            // Інвертуємо лінійну швидкість (простіший відскок)
-            Velocity = -Velocity;
-
-            // Якщо зіткнулися з ракеткою, додаємо спін
-            if (other is Paddle)
-            {
-                switch (CurrentSpin)
-                {
-                    case SpinType.Topspin:
-                        AngularVelocity = new Vector3D(1, 0, 0) * 50.0;   // приклад
-                        break;
-                    case SpinType.Backspin:
-                        AngularVelocity = new Vector3D(-1, 0, 0) * 50.0;
-                        break;
-                    case SpinType.Sidespin:
-                        AngularVelocity = new Vector3D(0, 1, 0) * 50.0;
-                        break;
-                    default:
-                        AngularVelocity = new Vector3D();
-                        break;
-                }
-
-                // Можна трохи модифікувати лінійну швидкість відповідно до спіну
-                Velocity += AngularVelocity * 0.001;
-            }
-
-            base.OnCollision(other);
+            Velocity = PhysicsEngine.Reflect(Velocity, this, other);
+            CurrentSpin = other is Paddle ? CurrentSpin : SpinType.None;
         }
+
+        private Vector3D GetSpinAxis(SpinType spin) => spin switch
+        {
+            SpinType.Topspin => new Vector3D(1, 0, 0),
+            SpinType.Backspin => new Vector3D(-1, 0, 0),
+            SpinType.Sidespin => new Vector3D(0, 1, 0),
+            _ => new Vector3D(0, 0, 0)
+        };
     }
 }

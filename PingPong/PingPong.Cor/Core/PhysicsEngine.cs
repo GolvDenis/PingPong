@@ -1,4 +1,4 @@
-﻿using PingPong.Cor.Core;
+﻿    using PingPong.Cor.Core;
 using PingPong.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -11,34 +11,25 @@ namespace PingPong.Core.Core
 {
     public class PhysicsEngine
     {
-        private const double Gravity = -9.8; // Гравітація в одиницях на секунду в квадраті (для спрощення)
+        public static Vector3D Gravity { get; set; } = new Vector3D(0, -9.81, 0);
 
-        /// <summary>
-        /// Оновлює швидкість і позицію об'єкта з урахуванням фізики (гравітація, швидкість).
-        /// </summary>
-        public void ApplyPhysics(GameObject3D obj, double deltaTime)
+        public static void Update(GameObject3D obj, double deltaTime)
         {
-            // Застосування гравітації (якщо об'єкт має швидкість по Y)
-            if (obj.Position.Y > 0) // Якщо об'єкт не на землі
-            {
-                obj.Velocity += new Vector3D(0, Gravity * deltaTime, 0);
-            }
-
-            // Оновлення позиції об'єкта на основі його швидкості
-            obj.Position += obj.Velocity * deltaTime;
+            obj.Velocity += Gravity * deltaTime;
+            obj.Position = new Point3D(
+                obj.Position.X + obj.Velocity.X * deltaTime,
+                obj.Position.Y + obj.Velocity.Y * deltaTime,
+                obj.Position.Z + obj.Velocity.Z * deltaTime);
         }
 
-        /// <summary>
-        /// Оновлення швидкості об'єкта в залежності від зіткнень. ч
-        /// </summary>
-        public void HandleCollisions(GameObject3D obj)
+        public static Vector3D Reflect(Vector3D velocity, GameObject3D obj, GameObject3D other)
         {
-            // Можна додати логіку для зіткнень, яка змінює швидкість об'єкта
-            if (obj.Position.Y < 0) // Якщо об'єкт потрапив нижче за поверхню (наприклад, земля)
-            {
-                obj.Position = new Point3D(obj.Position.X, 0, obj.Position.Z); // Встановлюємо на землю
-                obj.Velocity = new Vector3D(obj.Velocity.X, 0, obj.Velocity.Z); // Обнуляємо вертикальну швидкість
-            }
+            // Compute normal from obj and other
+            Vector3D normal = (obj.Position - other.Position);
+            normal.Normalize();
+            // Reflect v across normal: v - 2*(v·n)*n
+            double dot = Vector3D.DotProduct(velocity, normal);
+            return velocity - 2 * dot * normal;
         }
     }
 }

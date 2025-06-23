@@ -17,10 +17,8 @@ namespace PingPong.Corе.Helpers
 
         public MouseHelper(Viewport3D viewport, PerspectiveCamera camera)
         {
-            _viewport = viewport
-                ?? throw new ArgumentNullException(nameof(viewport));
-            _camera = camera
-                ?? throw new ArgumentNullException(nameof(camera));
+            _viewport = viewport;
+            _camera = camera;
         }
 
         /// <summary>
@@ -29,21 +27,13 @@ namespace PingPong.Corе.Helpers
         /// </summary>
         public Point3D ScreenToWorldOnPlane(Point screenPosition, double planeY)
         {
-            // 1) Hit-тест: якщо потрапили по якомусь 3D-об’єкту (наприклад, по столу), повертаємо
-            var result = VisualTreeHelper.HitTest(_viewport, screenPosition) as RayHitTestResult;
-            if (result != null)
-                return result.PointHit;
-
-            // 2) Інакше — робимо найпростіше перетинання променя камери з площиною Y=planeY
+            var nv = _camera.LookDirection;
+            nv.Normalize();
             var origin = _camera.Position;
-            var direction = _camera.LookDirection;
-            direction.Normalize();
-
-            if (Math.Abs(direction.Y) < 1e-6)
+            if (Math.Abs(nv.Y) < 1e-6)
                 return new Point3D(origin.X, planeY, origin.Z);
-
-            double t = (planeY - origin.Y) / direction.Y;
-            return origin + direction * t;
+            var t = (planeY - origin.Y) / nv.Y;
+            return origin + nv * t;
         }
     }
 }

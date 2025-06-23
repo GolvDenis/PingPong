@@ -6,27 +6,22 @@ namespace PingPong.Core.Core
 {
     public class CollisionManager
     {
-        /// <summary>
-        /// Перевірка на зіткнення між двома об'єктами (простіше за все на основі відстані).
-        /// </summary>
-        public bool CheckCollision(GameObject3D obj1, GameObject3D obj2)
-        {
-            double distance = (obj1.Position - obj2.Position).Length;
-            // Якщо відстань між об'єктами менша за суму їхніх радіусів (припускаємо сферичні об'єкти)
-            return distance < 1.0; // Наприклад, 1.0 — це радіус "зіткнення" (можна коригувати)
-        }
-
-        /// <summary>
-        /// Обробка зіткнень, наприклад, відбивання м'яча від ракетки чи меж гри.
-        /// </summary>
-        public void HandleCollision(GameObject3D obj1, GameObject3D obj2)
-        {
-            if (CheckCollision(obj1, obj2))
+            public bool CheckCollision(GameObject3D a, GameObject3D b)
             {
-                // Для спрощення, якщо зіткнення є — міняємо напрямок об'єкта.
-                obj1.Velocity = -obj1.Velocity; // Простий відскок
-                // Тут можна додати більш складну логіку для обробки зіткнень
+                double dist = (a.Position - b.Position).Length;
+                return dist < (GetRadius(a) + GetRadius(b));
+            }
+
+            public void HandleCollision(GameObject3D a, GameObject3D b)
+            {
+                if (!CheckCollision(a, b)) return;
+                a.OnCollision(b);
+                b.OnCollision(a);
+            }
+
+            private double GetRadius(GameObject3D obj)
+            {
+                return obj is Table ? 0.0 : (double)(obj as dynamic).CollisionRadius;
             }
         }
-    }
 }

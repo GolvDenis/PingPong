@@ -1,52 +1,46 @@
-﻿using System.Windows;
+﻿using PingPong.Corе.Helpers;
+using System.Security.Cryptography;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Media3D;
 
 namespace PingPong.Core.Core
 {
     public class InputManager
     {
-        private readonly HashSet<Key> _pressedKeys = new();
+        private readonly MouseHelper _mouse;
+        private readonly UIElement _element;
+        public Point MousePosition2D { get; private set; }
+        public Point3D MousePosition3D => _mouse.ScreenToWorldOnPlane(MousePosition2D, 0.76);
+        public bool IsLeftPressed { get; private set; }
+        public Vector KeyboardDir { get; private set; }
 
-        public void KeyDown(Key key)
+        public InputManager(UIElement element, MouseHelper mouse)
         {
-            _pressedKeys.Add(key);
+            _element = element;
+            _mouse = mouse;
+            Attach();
         }
 
-        public void KeyUp(Key key)
+        private void Attach()
         {
-            _pressedKeys.Remove(key);
+            _element.MouseMove += (s, e) => MousePosition2D = e.GetPosition(_element);
+            _element.MouseDown += (s, e) => { if (e.LeftButton == MouseButtonState.Pressed) IsLeftPressed = true; };
+            _element.MouseUp += (s, e) => { if (e.LeftButton == MouseButtonState.Released) IsLeftPressed = false; };
+            _element.KeyDown += OnKey;
+            _element.KeyUp += OnKeyUp;
+            _element.Focusable = true;
+            _element.Focus();
         }
 
-        /// <summary>
-        /// Повертає напрямки, у яких наразі рухається гравець.
-        /// </summary>
-        public List<Direction> GetActiveDirections()
+        private void OnKey(object s, KeyEventArgs e)
         {
-            List<Direction> directions = new();
-
-            if (_pressedKeys.Contains(Key.W)) directions.Add(Direction.Forward);
-            if (_pressedKeys.Contains(Key.S)) directions.Add(Direction.Backward);
-            if (_pressedKeys.Contains(Key.A)) directions.Add(Direction.Left);
-            if (_pressedKeys.Contains(Key.D)) directions.Add(Direction.Right);
-
-            return directions;
+            KeyboardDir = e.Key switch
+            { Key.W => new Vector(0, 1), Key.S => new Vector(0, -1), Key.A => new Vector(-1, 0), Key.D => new Vector(1, 0), _ => KeyboardDir };
         }
 
-        /// <summary>
-        /// Чи натиснута клавіша миші?
-        /// </summary>
-        public bool IsMouseButtonDown(MouseButton button)
-        {
-            return Mouse.LeftButton == MouseButtonState.Pressed && button == MouseButton.Left ||
-                   Mouse.RightButton == MouseButtonState.Pressed && button == MouseButton.Right;
-        }
+        private void OnKeyUp(object s, KeyEventArgs e) => KeyboardDir = new Vector(0, 0);
 
-        /// <summary>
-        /// Поточна позиція миші на екрані (вікні).
-        /// </summary>
-        public System.Windows.Point GetMousePosition()
-        {
-            return Mouse.GetPosition(System.Windows.Application.Current.MainWindow);
-        }
+
     }
 }

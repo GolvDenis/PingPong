@@ -16,9 +16,12 @@ namespace PingPong.Core.Models
     public class Paddle : GameObject3D
     {
         // Розміри ракетки в метрах
-        public double Width { get; } = 0.02;   // товщина
-        public double Height { get; } = 0.15;   // висота
-        public double Depth { get; } = 0.25;   // ширина (уздовж плоскості ракетки)
+        public double Width { get; } = 0.02;
+        public double Height { get; } = 0.15;
+        public double Depth { get; } = 0.25;
+
+        private bool _isHitting;
+        private double _hitProgress;
 
         /// <summary>
         /// Півдіагональ боксу для спрощеного сферичного колайдера.
@@ -90,16 +93,28 @@ namespace PingPong.Core.Models
             this.Position = new Point3D(0, 0, 0);
         }
 
-        /// <summary>
-        /// Можна перевизначити, щоб додати специфічну реакцію при зіткненні з м’ячем.
-        /// Наприклад, змінити кут відбивання залежно від позиції удару.
-        /// </summary>
-        public override void OnCollision(GameObject3D other)
+        public void UpdateHitAnimation(double deltaTime)
         {
-            // Якщо "other" — це м’яч, можна додати додаткову логіку:
-            //   var ball = other as Ball;
-            //   if (ball != null) { ... }
-            base.OnCollision(other);
+            if (!_isHitting) return;
+
+            _hitProgress += deltaTime * 10;
+            if (_hitProgress >= 1)
+            {
+                _hitProgress = 0;
+                _isHitting = false;
+            }
+
+            double offset = Math.Sin(_hitProgress * Math.PI) * 0.1;
+            Position = new Point3D(Position.X, Position.Y, Position.Z - offset);
+        }
+
+        public void Hit()
+        {
+            if (!_isHitting)
+            {
+                _isHitting = true;
+                _hitProgress = 0;
+            }
         }
     }
 }
